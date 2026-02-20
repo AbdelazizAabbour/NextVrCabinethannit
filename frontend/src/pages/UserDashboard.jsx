@@ -174,26 +174,63 @@ const UserDashboard = () => {
             default: // overview
                 return (
                     <div className="overview-content">
-                        <h3>Bienvenue sur votre espace, {user.name} !</h3>
-                        <p style={{ marginTop: '10px', color: '#64748b' }}>
-                            Retrouvez ici l'historique de vos rendez-vous, vos messages et vos services préférés.
-                        </p>
-                        <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div className="quick-action card">
-                                <h4>Prochain Rendez-vous</h4>
-                                {appointments.length > 0 && appointments[0].status === 'pending' ? (
-                                    <p>Votre rendez-vous du {new Date(appointments[0].date).toLocaleDateString()} est en attente de confirmation.</p>
-                                ) : (
-                                    <p>Aucun rendez-vous à venir.</p>
-                                )}
+                        <div className="welcome-section">
+                            <h3>Bienvenue sur votre espace, {user.name} !</h3>
+                            <p>Retrouvez ici l'historique de vos rendez-vous, vos messages et vos services préférés.</p>
+                        </div>
+
+                        <div className="overview-grid">
+                            <div className="overview-card">
+                                <div className="overview-card-header">
+                                    <h4>Prochain Rendez-vous</h4>
+                                    <Link to="#" onClick={() => setActiveTab('appointments')} className="view-all">Tout voir</Link>
+                                </div>
+                                <div className="overview-card-body">
+                                    {appointments.length > 0 ? (
+                                        <div className="featured-item">
+                                            <div className="item-main">{appointments[0].service}</div>
+                                            <div className="item-sub">
+                                                {new Date(appointments[0].date).toLocaleDateString('fr-FR')} à {appointments[0].time}
+                                            </div>
+                                            <span className={`status-badge status-${appointments[0].status}`}>
+                                                {appointments[0].status === 'pending' ? 'En attente' : 'Confirmé'}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <p className="empty-text">Aucun rendez-vous à venir.</p>
+                                    )}
+                                </div>
                             </div>
-                            <div className="quick-action card">
-                                <h4>Sélection du Moment</h4>
-                                {selections.length > 0 ? (
-                                    <p>Vous avez {selections.length} service(s) enregistré(s).</p>
-                                ) : (
-                                    <p>Enregistrez des services pour les retrouver plus tard.</p>
-                                )}
+
+                            <div className="overview-card">
+                                <div className="overview-card-header">
+                                    <h4>Dernier Message</h4>
+                                    <Link to="#" onClick={() => setActiveTab('messages')} className="view-all">Tout voir</Link>
+                                </div>
+                                <div className="overview-card-body">
+                                    {messages.length > 0 ? (
+                                        <div className="featured-item">
+                                            <div className="item-main">{messages[0].subject}</div>
+                                            <div className="item-sub text-truncate" style={{ maxWidth: '200px' }}>
+                                                {messages[0].message}
+                                            </div>
+                                            <div className="item-date">
+                                                {new Date(messages[0].created_at).toLocaleDateString('fr-FR')}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="empty-text">Aucun message envoyé.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="quick-actions-bar">
+                            <h4>Actions Rapides</h4>
+                            <div className="action-buttons">
+                                <Link to="/rendez-vous" className="btn btn-primary btn-sm">Nouveau Rendez-vous</Link>
+                                <Link to="/services" className="btn btn-secondary btn-sm">Explorer les Services</Link>
+                                <Link to="/contact" className="btn btn-white btn-sm">Nous Contacter</Link>
                             </div>
                         </div>
                     </div>

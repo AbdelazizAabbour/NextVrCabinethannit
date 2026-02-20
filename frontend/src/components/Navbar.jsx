@@ -44,6 +44,10 @@ const Navbar = () => {
         { path: '/contact', label: 'Contact' },
     ];
 
+    if (user) {
+        navLinks.push({ path: '/dashboard', label: 'TB de bord' });
+    }
+
     const isAdmin = location.pathname.startsWith('/admin');
     if (isAdmin) return null; // Hide navbar on admin pages
 
@@ -69,7 +73,12 @@ const Navbar = () => {
                                 to={link.path}
                                 className={`nav-link ${location.pathname === link.path ? 'active' : ''}`}
                             >
-                                {link.label}
+                                {link.path === '/dashboard' ? (
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                        Tableau de bord
+                                    </span>
+                                ) : link.label}
                             </Link>
                         </li>
                     ))}
@@ -90,12 +99,9 @@ const Navbar = () => {
                     )}
 
                     {user ? (
-                        <>
-                            <Link to="/dashboard" className="nav-link">Tableau de bord</Link>
-                            <button onClick={handleLogout} className="btn btn-secondary nav-cta">
-                                Déconnexion
-                            </button>
-                        </>
+                        <button onClick={handleLogout} className="btn btn-secondary nav-cta">
+                            Déconnexion
+                        </button>
                     ) : (
                         <Link to="/connexion" className="btn btn-secondary nav-cta">
                             Connexion

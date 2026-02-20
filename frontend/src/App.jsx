@@ -5,7 +5,7 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import GoToTop from './components/GoToTop';
 
-// Lazy load pages for better performance
+// Lazy performance
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
 const Services = lazy(() => import('./pages/Services'));
@@ -16,8 +16,9 @@ const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Register = lazy(() => import('./pages/Register'));
 const Login = lazy(() => import('./pages/Login'));
+const UserDashboard = lazy(() => import('./pages/UserDashboard'));
 
-// Loading component
+
 const PageLoader = () => (
     <div className="loading-overlay">
         <div style={{ textAlign: 'center' }}>
@@ -53,6 +54,7 @@ function App() {
                                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
                                     <Route path="/connexion" element={<Login />} />
                                     <Route path="/inscription" element={<Register />} />
+                                    <Route path="/dashboard" element={<UserDashboard />} />
                                 </Routes>
                             </Suspense>
                         </main>

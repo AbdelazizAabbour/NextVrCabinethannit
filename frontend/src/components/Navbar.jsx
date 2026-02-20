@@ -90,9 +90,12 @@ const Navbar = () => {
                     )}
 
                     {user ? (
-                        <button onClick={handleLogout} className="btn btn-secondary nav-cta">
-                            Déconnexion
-                        </button>
+                        <>
+                            <Link to="/dashboard" className="nav-link">Tableau de bord</Link>
+                            <button onClick={handleLogout} className="btn btn-secondary nav-cta">
+                                Déconnexion
+                            </button>
+                        </>
                     ) : (
                         <Link to="/connexion" className="btn btn-secondary nav-cta">
                             Connexion

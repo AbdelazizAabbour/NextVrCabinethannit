@@ -26,6 +26,8 @@ api.interceptors.request.use((config) => {
 });
 
 export const login = (credentials) => api.post('/login', credentials);
+export const getDashboardData = () => api.get('/dashboard');
+export const toggleServiceSelection = (serviceId) => api.post(`/services/${serviceId}/toggle-selection`);
 
 export const getServices = () => api.get('/services');
 export const getService = (id) => api.get(`/services/${id}`);

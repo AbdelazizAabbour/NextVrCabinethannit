@@ -19,8 +19,8 @@ const Login = () => {
 
         if (token) {
             localStorage.setItem('user_token', token);
-            // Fetch user info or just redirect
-            window.location.href = '/';
+            // Redirect to dashboard
+            window.location.href = '/dashboard';
         } else if (errorMsg) {
             if (errorMsg === 'Admin_Google_Forbidden') {
                 setError('Les administrateurs doivent se connecter via la page admin avec leur email.');
@@ -39,7 +39,7 @@ const Login = () => {
             const response = await login({ email, password });
             localStorage.setItem('user_token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
-            window.location.href = '/';
+            window.location.href = '/dashboard';
         } catch (err) {
             if (err.response && err.response.data && err.response.data.message) {
                 setError(err.response.data.message);

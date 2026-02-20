@@ -58,4 +58,10 @@ Route::group(['middleware' => ['auth:sanctum', 'admin']], function () {
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // User Dashboard Routes
+    Route::get('/dashboard', [\App\Http\Controllers\Api\UserDashboardController::class, 'index']);
+    Route::get('/dashboard/appointments', [\App\Http\Controllers\Api\UserDashboardController::class, 'appointments']);
+    Route::get('/dashboard/messages', [\App\Http\Controllers\Api\UserDashboardController::class, 'messages']);
+    Route::post('/services/{id}/toggle-selection', [\App\Http\Controllers\Api\UserDashboardController::class, 'toggleSelection']);
 });

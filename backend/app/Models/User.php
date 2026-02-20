@@ -21,13 +21,31 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'google_id',
+        'auth_provider',
         'is_admin',
     ];
 
     /**
+     * Relationships
+     */
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(ContactMessage::class);
+    }
+
+    public function selections()
+    {
+        return $this->belongsToMany(Service::class, 'user_selections');
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -36,8 +54,6 @@ class User extends Authenticatable
 
     /**
      * The attributes that should be cast.
-     *
-     * @var array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',

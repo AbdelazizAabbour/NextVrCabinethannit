@@ -23,49 +23,80 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'is_admin' => false, // Default is not admin
+            'is_admin' => false,
+            'auth_provider' => 'email',
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        return response()->json([
+            'message' => 'Registration successful',
+            'user' => $user
+        ], 201);
+    }
+
+    public function adminLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json(['message' => 'Identifiants invalides'], 401);
+        }
+
+        $user = Auth::user();
+
+        if (!$user->is_admin) {
+            Auth::logout();
+            return response()->json(['message' => 'Accès non autorisé aux administrateurs uniquement'], 403);
+        }
+
+        if ($user->auth_provider !== 'email') {
+            Auth::logout();
+            return response()->json(['message' => 'Les administrateurs doivent utiliser un compte email/mot de passe'], 403);
+        }
+
+        $token = $user->createToken('admin_token', ['admin'])->plainTextToken;
 
         return response()->json([
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => $user
-        ], 201);
+        ]);
     }
 
-    public function login(Request $request)
+    public function userLogin(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
         if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Identifiants invalides'], 401);
         }
 
-        $user = User::where('email', $request['email'])->firstOrFail();
+        $user = Auth::user();
 
-        if (!$user->is_admin) {
-            return response()->json(['message' => 'Unauthorized access'], 403);
-        }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('user_token', ['user'])->plainTextToken;
 
         return response()->json([
             'token' => $token,
             'token_type' => 'Bearer',
+            'user' => $user
         ]);
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json(['message' => 'Déconnexion réussie']);
     }
 
     public function user(Request $request)
     {
         return response()->json($request->user());
     }
-
 
     public function redirectToGoogle()
     {
@@ -79,21 +110,33 @@ class AuthController extends Controller
 
             $user = User::where('email', $googleUser->getEmail())->first();
 
-            if (!$user || !$user->is_admin) {
-                return redirect('http://localhost:3000/admin/login?error=Unauthorized_Access');
+            if ($user && $user->is_admin) {
+                // Admins cannot use Google Login
+                return redirect('http://localhost:3000/connexion?error=Admin_Google_Forbidden');
             }
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'google_id' => $googleUser->getId(),
+                    'auth_provider' => 'google',
+                    'is_admin' => false,
+                ]);
+            } else {
+                // Update existing user if needed
+                $user->update([
+                    'google_id' => $googleUser->getId(),
+                    'auth_provider' => 'google'
+                ]);
+            }
 
-            return redirect('http://localhost:3000/admin/login?token=' . $token); // Redirect to login page first to handle token storage logic or direct to dashboard? 
-            // Better redirect to a special route or login page that handles ?token=...
-            // Or direct to dashboard if AdminDashboard checks URL param? 
-            // AdminDashboard checks localStorage. 
-            // So we need a way to put token into localStorage.
-            // Usually we redirect to a frontend route like /admin/google-callback?token=... which then saves to LS and redirects to dashboard.
-            // I'll redirect to /admin/login?token=... and update AdminLogin.jsx to check for token in URL.
+            $token = $user->createToken('user_token', ['user'])->plainTextToken;
+
+            return redirect('http://localhost:3000/connexion?token=' . $token);
         } catch (\Exception $e) {
-            return redirect('http://localhost:3000/admin/login?error=Google_Auth_Failed');
+            Log::error('Google Auth Error: ' . $e->getMessage());
+            return redirect('http://localhost:3000/connexion?error=Google_Auth_Failed');
         }
     }
 }

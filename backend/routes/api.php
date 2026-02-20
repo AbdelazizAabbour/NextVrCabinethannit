@@ -24,13 +24,14 @@ Route::post('/contact', [ContactController::class, 'store']);
 Route::post('/appointments', [AppointmentController::class, 'store']);
 
 // Auth
-Route::post('/admin/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'userLogin']);
+Route::post('/admin/login', [AuthController::class, 'adminLogin']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
 // Protected routes (Sanctum)
-Route::group(['middleware' => ['auth:sanctum']], function () {
+Route::group(['middleware' => ['auth:sanctum', 'admin']], function () {
     Route::post('/admin/logout', [AuthController::class, 'logout']);
     Route::get('/admin/user', [AuthController::class, 'user']);
 
@@ -51,4 +52,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Patients (from appointments)
     Route::get('/admin/patients', [AdminController::class, 'patients']);
+});
+
+// General Protected routes for both users and admins
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 });

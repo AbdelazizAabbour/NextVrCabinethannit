@@ -15,6 +15,7 @@ const Appointment = lazy(() => import('./pages/Appointment'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Register = lazy(() => import('./pages/Register'));
+const Login = lazy(() => import('./pages/Login'));
 
 // Loading component
 const PageLoader = () => (
@@ -50,6 +51,7 @@ function App() {
                                     <Route path="/rendez-vous" element={<Appointment />} />
                                     <Route path="/admin/login" element={<AdminLogin />} />
                                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                                    <Route path="/connexion" element={<Login />} />
                                     <Route path="/inscription" element={<Register />} />
                                 </Routes>
                             </Suspense>

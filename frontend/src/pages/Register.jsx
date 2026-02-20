@@ -30,11 +30,9 @@ const Register = () => {
         }
 
         try {
-            const response = await registerUser(formData);
-            localStorage.setItem('user_token', response.data.token);
-            localStorage.setItem('user_data', JSON.stringify(response.data.user));
-            // Redirect to home or a success page
-            window.location.href = '/';
+            await registerUser(formData);
+            // Redirect to login page as requested
+            navigate('/connexion', { state: { message: 'Inscription réussie ! Veuillez vous connecter.' } });
         } catch (err) {
             console.error('Registration error:', err);
             if (err.response) {
@@ -132,7 +130,7 @@ const Register = () => {
                     </form>
 
                     <div className="register-footer">
-                        <p>Déjà un compte ? <Link to="/admin/login">Connectez-vous ici</Link></p>
+                        <p>Déjà un compte ? <Link to="/connexion">Connectez-vous ici</Link></p>
                     </div>
                 </div>
             </div>

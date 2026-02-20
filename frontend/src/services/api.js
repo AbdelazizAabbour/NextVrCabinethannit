@@ -12,12 +12,20 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('admin_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    const adminToken = localStorage.getItem('admin_token');
+    const userToken = localStorage.getItem('user_token');
+
+    // Choose token based on availability (admin token takes precedence if both exist, 
+    // though usually only one will be active for the session type)
+    if (adminToken) {
+        config.headers.Authorization = `Bearer ${adminToken}`;
+    } else if (userToken) {
+        config.headers.Authorization = `Bearer ${userToken}`;
     }
     return config;
 });
+
+export const login = (credentials) => api.post('/login', credentials);
 
 export const getServices = () => api.get('/services');
 export const getService = (id) => api.get(`/services/${id}`);

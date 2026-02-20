@@ -11,6 +11,20 @@ const Contact = () => {
         subject: '',
         message: ''
     });
+
+    React.useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || ''
+            }));
+        }
+    }, []);
+
     const [status, setStatus] = useState({ type: '', message: '' });
     const [loading, setLoading] = useState(false);
 

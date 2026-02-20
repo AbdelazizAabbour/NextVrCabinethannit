@@ -16,7 +16,14 @@ class ContactController extends Controller
             'message' => 'required',
         ]);
 
-        $message = ContactMessage::create($request->all());
+        $data = $request->all();
+
+        // Link to user if authenticated
+        if ($user = auth('sanctum')->user()) {
+            $data['user_id'] = $user->id;
+        }
+
+        $message = ContactMessage::create($data);
 
         return response()->json($message, 201);
     }

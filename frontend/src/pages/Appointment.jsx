@@ -13,6 +13,20 @@ const Appointment = () => {
         time: '',
         message: ''
     });
+
+    React.useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '' // Some users might have phone saved
+            }));
+        }
+    }, []);
+
     const [status, setStatus] = useState({ type: '', message: '' });
     const [loading, setLoading] = useState(false);
 

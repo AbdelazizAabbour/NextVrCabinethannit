@@ -21,6 +21,10 @@ const AdminDashboard = () => {
             return;
         }
         fetchData();
+
+        // Polling: Auto-refresh admin data every 45 seconds
+        const interval = setInterval(fetchData, 45000);
+        return () => clearInterval(interval);
     }, [navigate]);
 
     const fetchData = async () => {

@@ -16,7 +16,17 @@ class AppointmentController extends Controller
             'service' => 'required',
         ]);
 
-        $appointment = Appointment::create($request->all());
+        $data = $request->all();
+
+        // Initialize user_id to null, in case no user is authenticated
+        $data['user_id'] = null;
+
+        // Link to user if authenticated
+        if ($user = auth('sanctum')->user()) {
+            $data['user_id'] = $user->id;
+        }
+
+        $appointment = Appointment::create($data);
 
         return response()->json($appointment, 201);
     }

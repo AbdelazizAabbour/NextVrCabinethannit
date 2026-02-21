@@ -69,10 +69,19 @@ const Register = () => {
                         <p>Inscrivez-vous pour un suivi personnalisé</p>
                     </div>
 
-                    {error && <div className="alert alert-error">{error}</div>}
+                    {error && (
+                        <div className="alert alert-error">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            {error}
+                        </div>
+                    )}
 
                     <form onSubmit={handleRegister} className="register-form">
-                        <div className="form-group">
+                        <div className="form-group animate-fadeInUp animate-delay-100">
                             <label htmlFor="name">Nom complet</label>
                             <input
                                 type="text"
@@ -85,7 +94,7 @@ const Register = () => {
                                 placeholder="Votre nom"
                             />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group animate-fadeInUp animate-delay-100">
                             <label htmlFor="email">Email</label>
                             <input
                                 type="email"
@@ -98,7 +107,7 @@ const Register = () => {
                                 placeholder="votre@email.com"
                             />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group animate-fadeInUp animate-delay-100">
                             <label htmlFor="password">Mot de passe</label>
                             <input
                                 type="password"
@@ -111,7 +120,7 @@ const Register = () => {
                                 placeholder="••••••••"
                             />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group animate-fadeInUp animate-delay-100">
                             <label htmlFor="password_confirmation">Confirmer le mot de passe</label>
                             <input
                                 type="password"
@@ -124,12 +133,17 @@ const Register = () => {
                                 placeholder="••••••••"
                             />
                         </div>
-                        <button type="submit" style={{ width: '100%' }} className="btn btn-primary btn-block animate-fadeInUp animate-delay-100" disabled={loading}>
-                            {loading ? 'Inscription...' : 'S\'inscrire'}
+                        <button type="submit" className="btn btn-primary btn-block animate-fadeInUp animate-delay-100" style={{ width: '100%', height: '52px' }} disabled={loading}>
+                            {loading ? (
+                                <>
+                                    <span className="spinner-small" style={{ marginRight: '10px' }}></span>
+                                    Inscription en cours...
+                                </>
+                            ) : 'S\'inscrire'}
                         </button>
                     </form>
 
-                    <div className="register-footer">
+                    <div className="register-footer animate-fadeInUp animate-delay-100">
                         <p>Déjà un compte ? <Link to="/connexion">Connectez-vous ici</Link></p>
                     </div>
                 </div>

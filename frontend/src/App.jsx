@@ -31,37 +31,44 @@ const PageLoader = () => (
 import SplashScreen from './components/SplashScreen';
 
 function App() {
-    const [showSplash, setShowSplash] = React.useState(true);
+    const [showSplash, setShowSplash] = React.useState(() => {
+        // Only show splash screen if it hasn't been shown in this session
+        return !sessionStorage.getItem('splash_shown');
+    });
+
+    const handleFinish = () => {
+        setShowSplash(false);
+        sessionStorage.setItem('splash_shown', 'true');
+    };
 
     return (
         <Router>
-            <SplashScreen onFinish={() => setShowSplash(false)} />
-            {!showSplash && (
-                <>
+            {showSplash ? (
+                <SplashScreen onFinish={handleFinish} />
+            ) : (
+                <div className="app animate-fadeIn">
                     <ScrollToTop />
-                    <div className="app animate-fadeIn">
-                        <Navbar />
-                        <main>
-                            <Suspense fallback={<PageLoader />}>
-                                <Routes>
-                                    <Route path="/" element={<Home />} />
-                                    <Route path="/a-propos" element={<About />} />
-                                    <Route path="/services" element={<Services />} />
-                                    <Route path="/equipe" element={<Doctors />} />
-                                    <Route path="/contact" element={<Contact />} />
-                                    <Route path="/rendez-vous" element={<Appointment />} />
-                                    <Route path="/admin/login" element={<AdminLogin />} />
-                                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                                    <Route path="/connexion" element={<Login />} />
-                                    <Route path="/inscription" element={<Register />} />
-                                    <Route path="/dashboard" element={<UserDashboard />} />
-                                </Routes>
-                            </Suspense>
-                        </main>
-                        <Footer />
-                        <GoToTop />
-                    </div>
-                </>
+                    <Navbar />
+                    <main>
+                        <Suspense fallback={<PageLoader />}>
+                            <Routes>
+                                <Route path="/" element={<Home />} />
+                                <Route path="/a-propos" element={<About />} />
+                                <Route path="/services" element={<Services />} />
+                                <Route path="/equipe" element={<Doctors />} />
+                                <Route path="/contact" element={<Contact />} />
+                                <Route path="/rendez-vous" element={<Appointment />} />
+                                <Route path="/admin/login" element={<AdminLogin />} />
+                                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                                <Route path="/connexion" element={<Login />} />
+                                <Route path="/inscription" element={<Register />} />
+                                <Route path="/dashboard" element={<UserDashboard />} />
+                            </Routes>
+                        </Suspense>
+                    </main>
+                    <Footer />
+                    <GoToTop />
+                </div>
             )}
         </Router>
     );

@@ -65,7 +65,6 @@ const Navbar = () => {
                     </div>
                 </Link>
 
-                {/* Desktop Navigation */}
                 <ul className="navbar-links">
                     {navLinks.map((link) => (
                         <li key={link.path}>

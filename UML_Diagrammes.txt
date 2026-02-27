@@ -1,0 +1,79 @@
+
+--- Description textuelle des acteurs ---
+
++---------------------+-----------------------------------------------------------+
+| Acteur              | Description                                               |
++---------------------+-----------------------------------------------------------+
+| Visiteur            | Utilisateur non authentifié qui navigue sur le site,       |
+|                     | peut consulter les pages publiques, envoyer des messages   |
+|                     | de contact et prendre des rendez-vous.                     |
++---------------------+-----------------------------------------------------------+
+| Patient             | Utilisateur authentifié (inscrit ou via Google OAuth).     |
+| (Utilisateur)       | Hérite des droits du visiteur et peut en plus accéder      |
+|                     | à son tableau de bord, suivre ses rendez-vous, messages    |
+|                     | et sélectionner des services.                              |
++---------------------+-----------------------------------------------------------+
+| Administrateur      | Utilisateur avec le rôle admin (is_admin = true).         |
+|                     | Gère les rendez-vous, messages, patients et utilisateurs.  |
+|                     | Se connecte uniquement via email/mot de passe (pas Google).|
++---------------------+-----------------------------------------------------------+
+| Google OAuth        | Système externe d'authentification via Google.             |
++---------------------+-----------------------------------------------------------+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                 RÉSUMÉ DES RELATIONS ENTRE CLASSES                           ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
++-------------------------+----------------+-------------------------+-----------+
+| Classe Source           | Relation       | Classe Cible            | Cardinalité|
++-------------------------+----------------+-------------------------+-----------+
+| User                    | HasMany        | Appointment             | 1 → 0..*  |
+| User                    | HasMany        | ContactMessage          | 1 → 0..*  |
+| User                    | BelongsToMany  | Service                 | 0..* ↔ 0..*|
+| Appointment             | BelongsTo      | User                    | 0..* → 0..1|
+| ContactMessage          | BelongsTo      | User                    | 0..* → 0..1|
+| UserSelection (pivot)   | FK             | User                    | * → 1     |
+| UserSelection (pivot)   | FK             | Service                 | * → 1     |
++-------------------------+----------------+-------------------------+-----------+
+
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                 ROUTES API (Backend Laravel)                                  ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+--- Routes Publiques ---
+GET    /api/services                  → ServiceController@index
+GET    /api/services/{id}             → ServiceController@show
+GET    /api/doctors                   → DoctorController@index
+GET    /api/doctors/{id}              → DoctorController@show
+POST   /api/contact                   → ContactController@store
+POST   /api/appointments              → AppointmentController@store
+POST   /api/login                     → AuthController@userLogin
+POST   /api/admin/login               → AuthController@adminLogin
+POST   /api/register                  → AuthController@register
+GET    /api/auth/google               → AuthController@redirectToGoogle
+GET    /api/auth/google/callback      → AuthController@handleGoogleCallback
+
+--- Routes Protégées (Utilisateur authentifié) ---
+GET    /api/user                      → AuthController@user
+POST   /api/logout                    → AuthController@logout
+GET    /api/dashboard                 → UserDashboardController@index
+GET    /api/dashboard/appointments    → UserDashboardController@appointments
+GET    /api/dashboard/messages        → UserDashboardController@messages
+POST   /api/services/{id}/toggle-selection → UserDashboardController@toggleSelection
+PATCH  /api/dashboard/messages/{id}/mark-read → UserDashboardController@markReplyRead
+
+--- Routes Protégées (Administrateur uniquement) ---
+POST   /api/admin/logout              → AuthController@logout
+GET    /api/admin/user                → AuthController@user
+GET    /api/admin/dashboard           → AdminController@stats
+GET    /api/admin/appointments        → AppointmentController@index
+PATCH  /api/admin/appointments/{id}   → AppointmentController@updateStatus
+GET    /api/admin/messages            → ContactController@index
+PATCH  /api/admin/messages/{id}       → ContactController@updateStatus
+POST   /api/admin/messages/{id}/reply → ContactController@reply
+DELETE /api/admin/messages/{id}       → ContactController@destroy
+GET    /api/admin/users               → AdminController@users
+GET    /api/admin/patients            → AdminController@patients
+

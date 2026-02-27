@@ -9,11 +9,6 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Api\AuthController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
 
 // Public routes
 Route::get('/services', [ServiceController::class, 'index']);
@@ -45,6 +40,7 @@ Route::group(['middleware' => ['auth:sanctum', 'admin']], function () {
     // Messages
     Route::get('/admin/messages', [ContactController::class, 'index']);
     Route::patch('/admin/messages/{id}', [ContactController::class, 'updateStatus']);
+    Route::post('/admin/messages/{id}/reply', [ContactController::class, 'reply']);
     Route::delete('/admin/messages/{id}', [ContactController::class, 'destroy']);
 
     // Admin Users Management
@@ -64,4 +60,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/dashboard/appointments', [\App\Http\Controllers\Api\UserDashboardController::class, 'appointments']);
     Route::get('/dashboard/messages', [\App\Http\Controllers\Api\UserDashboardController::class, 'messages']);
     Route::post('/services/{id}/toggle-selection', [\App\Http\Controllers\Api\UserDashboardController::class, 'toggleSelection']);
+    Route::patch('/dashboard/messages/{id}/mark-read', [\App\Http\Controllers\Api\UserDashboardController::class, 'markReplyRead']);
 });

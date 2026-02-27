@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDashboardStats, getAppointments, updateAppointmentStatus, getMessages, updateMessageStatus, getPatients, getUsers, adminLogout } from '../services/api';
+import { getDashboardStats, getAppointments, updateAppointmentStatus, getMessages, updateMessageStatus, getPatients, getUsers, adminLogout, replyToMessage } from '../services/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -13,6 +13,9 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [filter, setFilter] = useState('all'); // all, pending, confirmed, cancelled
     const [loading, setLoading] = useState(true);
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [replyText, setReplyText] = useState('');
+    const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('admin_token');
@@ -23,12 +26,12 @@ const AdminDashboard = () => {
         fetchData();
 
         // Polling: Auto-refresh admin data every 45 seconds
-        const interval = setInterval(fetchData, 45000);
+        const interval = setInterval(() => fetchData(true), 45000);
         return () => clearInterval(interval);
     }, [navigate]);
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (isPoll = false) => {
+        if (!isPoll) setLoading(true);
         try {
             const [statsRes, appointmentsRes, patientsRes, messagesRes, usersRes] = await Promise.all([
                 getDashboardStats(),
@@ -46,7 +49,7 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
-            setLoading(false);
+            if (!isPoll) setLoading(false);
         }
     };
 
@@ -75,6 +78,27 @@ const AdminDashboard = () => {
     const handleLogout = () => {
         localStorage.removeItem('admin_token');
         navigate('/admin/login');
+    };
+
+    const openReplyModal = (msg) => {
+        setSelectedMessage(msg);
+        setReplyText(msg.admin_reply || '');
+        setIsReplyModalOpen(true);
+    };
+
+    const handleReply = async (e) => {
+        e.preventDefault();
+        try {
+            await replyToMessage(selectedMessage.id, replyText);
+            setMessages(prev => prev.map(msg =>
+                msg.id === selectedMessage.id ? { ...msg, admin_reply: replyText, replied_at: new Date().toISOString(), is_read: true } : msg
+            ));
+            setIsReplyModalOpen(false);
+            setReplyText('');
+            setSelectedMessage(null);
+        } catch (error) {
+            console.error('Error replying to message:', error);
+        }
     };
 
     const filteredAppointments = appointments.filter(app =>
@@ -139,29 +163,41 @@ const AdminDashboard = () => {
                 {/* Stats Cards */}
                 <div className="stats-cards">
                     <div className="stat-card">
-                        <div className="stat-icon primary">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                        <div className={`stat-icon primary ${loading ? 'skeleton skeleton-circle' : ''}`}>
+                            {!loading && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>}
                         </div>
                         <div className="stat-info">
-                            <h3>{stats.total_rdv}</h3>
+                            {loading ? (
+                                <div className="skeleton skeleton-text"></div>
+                            ) : (
+                                <h3>{stats.total_rdv}</h3>
+                            )}
                             <p>Total Rendez-vous</p>
                         </div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-icon warning">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                        <div className={`stat-icon warning ${loading ? 'skeleton skeleton-circle' : ''}`}>
+                            {!loading && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>}
                         </div>
                         <div className="stat-info">
-                            <h3>{stats.pending_rdv}</h3>
+                            {loading ? (
+                                <div className="skeleton skeleton-text"></div>
+                            ) : (
+                                <h3>{stats.pending_rdv}</h3>
+                            )}
                             <p>En Attente</p>
                         </div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-icon success">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                        <div className={`stat-icon success ${loading ? 'skeleton skeleton-circle' : ''}`}>
+                            {!loading && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>}
                         </div>
                         <div className="stat-info">
-                            <h3>{stats.today_rdv}</h3>
+                            {loading ? (
+                                <div className="skeleton skeleton-text"></div>
+                            ) : (
+                                <h3>{stats.today_rdv}</h3>
+                            )}
                             <p>Aujourd'hui</p>
                         </div>
                     </div>
@@ -203,39 +239,52 @@ const AdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredAppointments.map(app => (
-                                        <tr key={app.id}>
-                                            <td className="font-medium">{app.name}</td>
-                                            <td>{app.service}</td>
-                                            <td>
-                                                <div className="datetime">
-                                                    <span className="date">{app.date}</span>
-                                                    <span className="time">{app.time}</span>
-                                                </div>
-                                            </td>
-                                            <td>{app.phone}</td>
-                                            <td>
-                                                <span className={`status-badge ${app.status}`}>
-                                                    {app.status === 'pending' ? 'En Attente' :
-                                                        app.status === 'confirmed' ? 'Confirmé' : 'Annulé'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="actions">
-                                                    {app.status === 'pending' && (
-                                                        <>
-                                                            <button className="action-btn check" onClick={() => handleStatusChange(app.id, 'confirmed')} title="Confirmer">
-                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                                            </button>
-                                                            <button className="action-btn cross" onClick={() => handleStatusChange(app.id, 'cancelled')} title="Annuler">
-                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {loading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <tr key={i} className="skeleton-row">
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        filteredAppointments.map(app => (
+                                            <tr key={app.id}>
+                                                <td className="font-medium">{app.name}</td>
+                                                <td>{app.service}</td>
+                                                <td>
+                                                    <div className="datetime">
+                                                        <span className="date">{app.date}</span>
+                                                        <span className="time">{app.time}</span>
+                                                    </div>
+                                                </td>
+                                                <td>{app.phone}</td>
+                                                <td>
+                                                    <span className={`status-badge ${app.status}`}>
+                                                        {app.status === 'pending' ? 'En Attente' :
+                                                            app.status === 'confirmed' ? 'Confirmé' : 'Annulé'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="actions">
+                                                        {app.status === 'pending' && (
+                                                            <>
+                                                                <button className="action-btn check" onClick={() => handleStatusChange(app.id, 'confirmed')} title="Confirmer">
+                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                                </button>
+                                                                <button className="action-btn cross" onClick={() => handleStatusChange(app.id, 'cancelled')} title="Annuler">
+                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -261,26 +310,37 @@ const AdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {patients.map(p => (
-                                        <tr key={p.id}>
-                                            <td className="font-medium">{p.name}</td>
-                                            <td>{p.email || 'N/A'}</td>
-                                            <td>{p.phone}</td>
-                                            <td>---</td>
-                                            <td>
-                                                <button className="action-btn view" title="Voir dossier">
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {loading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <tr key={i} className="skeleton-row">
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        patients.map(p => (
+                                            <tr key={p.id}>
+                                                <td className="font-medium">{p.name}</td>
+                                                <td>{p.email || 'N/A'}</td>
+                                                <td>{p.phone}</td>
+                                                <td>---</td>
+                                                <td>
+                                                    <button className="action-btn view" title="Voir dossier">
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 )}
 
-                {/* Messages Tab */}
                 {activeTab === 'messages' && (
                     <div className="dashboard-card animate-fadeInUp">
                         <div className="card-header">
@@ -298,23 +358,40 @@ const AdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {messages.map(msg => (
-                                        <tr key={msg.id}>
-                                            <td className="font-medium">{msg.name}</td>
-                                            <td>{msg.subject}</td>
-                                            <td>{new Date(msg.created_at).toLocaleDateString()}</td>
-                                            <td>
-                                                {msg.is_read ? <span className="status-badge confirmed">Lu</span> : <span className="status-badge pending">Non lu</span>}
-                                            </td>
-                                            <td>
-                                                {!msg.is_read && (
-                                                    <button className="action-btn view" onClick={() => handleMarkAsRead(msg.id)} title="Marquer comme lu">
-                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {loading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <tr key={i} className="skeleton-row">
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        messages.map(msg => (
+                                            <tr key={msg.id}>
+                                                <td className="font-medium">{msg.name}</td>
+                                                <td>{msg.subject}</td>
+                                                <td>{new Date(msg.created_at).toLocaleDateString()}</td>
+                                                <td>
+                                                    {msg.is_read ? <span className="status-badge confirmed">Lu</span> : <span className="status-badge pending">Non lu</span>}
+                                                </td>
+                                                <td>
+                                                    <div className="actions">
+                                                        <button className="action-btn view" onClick={() => openReplyModal(msg)} title="Répondre">
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                                        </button>
+                                                        {!msg.is_read && (
+                                                            <button className="action-btn check" onClick={() => handleMarkAsRead(msg.id)} title="Marquer comme lu">
+                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -338,18 +415,29 @@ const AdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {users.map(u => (
-                                        <tr key={u.id}>
-                                            <td className="font-medium">{u.name}</td>
-                                            <td>{u.email}</td>
-                                            <td>
-                                                <span className={`status-badge ${u.is_admin ? 'confirmed' : 'pending'}`}>
-                                                    {u.is_admin ? 'Administrateur' : 'Utilisateur'}
-                                                </span>
-                                            </td>
-                                            <td>{new Date(u.created_at).toLocaleDateString()}</td>
-                                        </tr>
-                                    ))}
+                                    {loading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <tr key={i} className="skeleton-row">
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                                <td><span className="skeleton"></span></td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        users.map(u => (
+                                            <tr key={u.id}>
+                                                <td className="font-medium">{u.name}</td>
+                                                <td>{u.email}</td>
+                                                <td>
+                                                    <span className={`status-badge ${u.is_admin ? 'confirmed' : 'pending'}`}>
+                                                        {u.is_admin ? 'Administrateur' : 'Utilisateur'}
+                                                    </span>
+                                                </td>
+                                                <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -358,6 +446,40 @@ const AdminDashboard = () => {
 
 
             </main>
+
+          
+            {isReplyModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content animate-scaleIn">
+                        <div className="modal-header">
+                            <h3>Répondre à {selectedMessage?.name}</h3>
+                            <button className="close-btn" onClick={() => setIsReplyModalOpen(false)}>&times;</button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="message-summary">
+                                <p><strong>Sujet:</strong> {selectedMessage?.subject}</p>
+                                <p><strong>Message:</strong> {selectedMessage?.message}</p>
+                            </div>
+                            <form onSubmit={handleReply}>
+                                <div className="form-group">
+                                    <label>Votre Réponse</label>
+                                    <textarea
+                                        value={replyText}
+                                        onChange={(e) => setReplyText(e.target.value)}
+                                        placeholder="Écrivez votre réponse ici..."
+                                        rows="5"
+                                        required
+                                    ></textarea>
+                                </div>
+                                <div className="modal-footer">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setIsReplyModalOpen(false)}>Annuler</button>
+                                    <button type="submit" className="btn btn-primary">Envoyer la réponse</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

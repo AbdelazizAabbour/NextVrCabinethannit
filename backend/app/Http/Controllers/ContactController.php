@@ -57,5 +57,25 @@ class ContactController extends Controller
 
         return response()->json($message);
     }
+
+    public function reply(Request $request, $id)
+    {
+        $message = ContactMessage::find($id);
+        if (!$message) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        $request->validate([
+            'reply' => 'required|string'
+        ]);
+
+        $message->update([
+            'admin_reply' => $request->reply,
+            'replied_at' => now(),
+            'is_read' => true
+        ]);
+
+        return response()->json($message);
+    }
 }
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getDashboardData, toggleServiceSelection } from '../services/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { getDashboardData, toggleServiceSelection, markReplyAsRead } from '../services/api';
 import './UserDashboard.css';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,9 @@ const UserDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [expandedMessage, setExpandedMessage] = useState(null);
+    const notifRef = useRef(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -34,6 +37,35 @@ const UserDashboard = () => {
 
         return () => clearInterval(interval);
     }, [navigate]);
+
+    // Close notifications dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (notifRef.current && !notifRef.current.contains(e.target)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleMarkReplyRead = async (msgId) => {
+        try {
+            await markReplyAsRead(msgId);
+            setData(prev => ({
+                ...prev,
+                messages: prev.messages.map(msg =>
+                    msg.id === msgId ? { ...msg, reply_read: true } : msg
+                ),
+                stats: {
+                    ...prev.stats,
+                    unread_replies: Math.max(0, prev.stats.unread_replies - 1)
+                }
+            }));
+        } catch (err) {
+            console.error("Error marking reply as read:", err);
+        }
+    };
 
     if (loading) {
         return (
@@ -67,6 +99,9 @@ const UserDashboard = () => {
     if (!data) return null;
 
     const { user, appointments, messages, selections, stats } = data;
+
+    // Get messages with unread admin replies
+    const unreadReplies = messages.filter(msg => msg.admin_reply && !msg.reply_read);
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -110,32 +145,103 @@ const UserDashboard = () => {
                 );
             case 'messages':
                 return (
-                    <div className="data-table-container">
+                    <div className="messages-list-container">
                         {messages.length > 0 ? (
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Sujet</th>
-                                        <th>Message</th>
-                                        <th>Date</th>
-                                        <th>Statut</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {messages.map(msg => (
-                                        <tr key={msg.id}>
-                                            <td style={{ fontWeight: 600 }}>{msg.subject}</td>
-                                            <td style={{ maxWidth: '300px' }} className="text-truncate">{msg.message}</td>
-                                            <td>{new Date(msg.created_at).toLocaleDateString('fr-FR')}</td>
-                                            <td>
+                            <div className="messages-list">
+                                {messages.map(msg => (
+                                    <div
+                                        key={msg.id}
+                                        className={`message-card ${msg.admin_reply ? 'has-reply' : ''} ${expandedMessage === msg.id ? 'expanded' : ''}`}
+                                        onClick={() => setExpandedMessage(expandedMessage === msg.id ? null : msg.id)}
+                                    >
+                                        <div className="message-card-header">
+                                            <div className="message-card-info">
+                                                <h4 className="message-subject">{msg.subject}</h4>
+                                                <span className="message-date">
+                                                    {new Date(msg.created_at).toLocaleDateString('fr-FR', {
+                                                        day: 'numeric', month: 'long', year: 'numeric'
+                                                    })}
+                                                </span>
+                                            </div>
+                                            <div className="message-card-badges">
+                                                {msg.admin_reply && (
+                                                    <span className="reply-badge">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="9 17 4 12 9 7"></polyline>
+                                                            <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+                                                        </svg>
+                                                        Répondu
+                                                    </span>
+                                                )}
                                                 <span className={`status-badge ${msg.is_read ? 'status-confirmed' : 'status-pending'}`}>
                                                     {msg.is_read ? 'Lu' : 'Non lu'}
                                                 </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                                <svg className="expand-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </div>
+                                        </div>
+
+                                        {expandedMessage === msg.id && (
+                                            <div className="message-card-body animate-fadeInUp">
+                                                <div className="original-message-block">
+                                                    <div className="block-label">
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                                        </svg>
+                                                        Votre message
+                                                    </div>
+                                                    <p>{msg.message}</p>
+                                                </div>
+
+                                                {msg.admin_reply && (
+                                                    <div className="admin-reply-block">
+                                                        <div className="block-label admin-label">
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                                            </svg>
+                                                            Réponse de l'administration
+                                                        </div>
+                                                        <p>{msg.admin_reply}</p>
+                                                        <div className="reply-meta">
+                                                            <span className="reply-date">
+                                                                Répondu le {new Date(msg.replied_at).toLocaleDateString('fr-FR', {
+                                                                    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                                })}
+                                                            </span>
+                                                            {!msg.reply_read && (
+                                                                <button
+                                                                    className="mark-read-btn"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleMarkReplyRead(msg.id);
+                                                                    }}
+                                                                >
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                                    </svg>
+                                                                    Marquer comme lu
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {!msg.admin_reply && (
+                                                    <div className="waiting-reply-block">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <circle cx="12" cy="12" r="10"></circle>
+                                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                                        </svg>
+                                                        <span>En attente de réponse...</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         ) : (
                             <div className="empty-state">
                                 <h4>Aucun message envoyé</h4>
@@ -219,6 +325,15 @@ const UserDashboard = () => {
                                             <div className="item-sub text-truncate" style={{ maxWidth: '200px' }}>
                                                 {messages[0].message}
                                             </div>
+                                            {messages[0].admin_reply && (
+                                                <div className="overview-reply-preview">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="9 17 4 12 9 7"></polyline>
+                                                        <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+                                                    </svg>
+                                                    <span className="text-truncate">{messages[0].admin_reply}</span>
+                                                </div>
+                                            )}
                                             <div className="item-date">
                                                 {new Date(messages[0].created_at).toLocaleDateString('fr-FR')}
                                             </div>
@@ -251,7 +366,109 @@ const UserDashboard = () => {
                         <h1>Mon Tableau de Bord</h1>
                         <p>Espace patient de {user.name}</p>
                     </div>
-                    <div className="user-profile-summary">
+                    <div className="header-actions">
+                        {/* Notification Bell */}
+                        <div className="notification-wrapper" ref={notifRef}>
+                            <button
+                                className="notification-bell-btn"
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                title="Notifications"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                                {stats.unread_replies > 0 && (
+                                    <span className="notification-badge">{stats.unread_replies}</span>
+                                )}
+                                {stats.unread_replies > 0 && <span className="bell-pulse"></span>}
+                            </button>
+
+                            {showNotifications && (
+                                <div className="notifications-dropdown animate-fadeInUp">
+                                    <div className="notifications-header">
+                                        <h4>Notifications</h4>
+                                        {unreadReplies.length > 0 && (
+                                            <span className="notif-count">{unreadReplies.length} nouvelle{unreadReplies.length > 1 ? 's' : ''}</span>
+                                        )}
+                                    </div>
+                                    <div className="notifications-list">
+                                        {unreadReplies.length > 0 ? (
+                                            unreadReplies.map(msg => (
+                                                <div key={msg.id} className="notification-item unread">
+                                                    <div className="notif-icon">
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="9 17 4 12 9 7"></polyline>
+                                                            <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div className="notif-content">
+                                                        <p className="notif-title">Nouvelle réponse à "<strong>{msg.subject}</strong>"</p>
+                                                        <p className="notif-preview">{msg.admin_reply.substring(0, 80)}{msg.admin_reply.length > 80 ? '...' : ''}</p>
+                                                        <span className="notif-time">
+                                                            {new Date(msg.replied_at).toLocaleDateString('fr-FR', {
+                                                                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                    <div className="notif-actions">
+                                                        <button
+                                                            className="notif-read-btn"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleMarkReplyRead(msg.id);
+                                                            }}
+                                                            title="Marquer comme lu"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            className="notif-view-btn"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActiveTab('messages');
+                                                                setExpandedMessage(msg.id);
+                                                                setShowNotifications(false);
+                                                            }}
+                                                            title="Voir le message"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                                <circle cx="12" cy="12" r="3"></circle>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="notif-empty">
+                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                                </svg>
+                                                <p>Aucune nouvelle notification</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {unreadReplies.length > 0 && (
+                                        <div className="notifications-footer">
+                                            <button
+                                                className="view-all-btn"
+                                                onClick={() => {
+                                                    setActiveTab('messages');
+                                                    setShowNotifications(false);
+                                                }}
+                                            >
+                                                Voir tous les messages
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         {user.auth_provider === 'google' && (
                             <div className="google-badge-dashboard">
                                 <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginRight: '8px' }}>
@@ -294,6 +511,20 @@ const UserDashboard = () => {
                             <div className="stat-value">{stats.total_selections}</div>
                         </div>
                     </div>
+                    {stats.unread_replies > 0 && (
+                        <div className="stat-card stat-card-highlight">
+                            <div className="stat-icon icon-rose">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                            </div>
+                            <div className="stat-info">
+                                <h3>Réponses non lues</h3>
+                                <div className="stat-value">{stats.unread_replies}</div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="dashboard-tabs">
@@ -314,6 +545,9 @@ const UserDashboard = () => {
                         onClick={() => setActiveTab('messages')}
                     >
                         Mes Messages
+                        {stats.unread_replies > 0 && (
+                            <span className="tab-badge">{stats.unread_replies}</span>
+                        )}
                     </button>
                     <button
                         className={`tab-btn ${activeTab === 'selections' ? 'active' : ''}`}

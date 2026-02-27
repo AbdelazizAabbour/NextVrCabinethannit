@@ -11,7 +11,7 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Handle Google OAuth Callback and Errors
+    
     useEffect(() => {
         const query = new URLSearchParams(window.location.search);
         const token = query.get('token');
@@ -19,7 +19,6 @@ const Login = () => {
 
         if (token) {
             localStorage.setItem('user_token', token);
-            // Redirect to dashboard
             window.location.href = '/dashboard';
         } else if (errorMsg) {
             if (errorMsg === 'Admin_Google_Forbidden') {

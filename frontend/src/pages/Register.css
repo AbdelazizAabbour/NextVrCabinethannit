@@ -11,7 +11,7 @@
     overflow: hidden;
 }
 
-/* Background decorative elements */
+
 .register-page::before {
     content: '';
     position: absolute;

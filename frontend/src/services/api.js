@@ -49,8 +49,12 @@ export const getAppointments = () => api.get('/admin/appointments');
 export const updateAppointmentStatus = (id, status) => api.patch(`/admin/appointments/${id}`, { status });
 export const getMessages = () => api.get('/admin/messages');
 export const updateMessageStatus = (id, is_read) => api.patch(`/admin/messages/${id}`, { is_read });
+export const replyToMessage = (id, reply) => api.post(`/admin/messages/${id}/reply`, { reply });
 export const deleteMessage = (id) => api.delete(`/admin/messages/${id}`);
 export const getPatients = () => api.get('/admin/patients');
 export const getUsers = () => api.get('/admin/users');
 
 export default api;
+
+// User Dashboard
+export const markReplyAsRead = (id) => api.patch(`/dashboard/messages/${id}/mark-read`);

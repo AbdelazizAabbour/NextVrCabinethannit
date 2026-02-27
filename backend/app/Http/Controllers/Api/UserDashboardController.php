@@ -25,15 +25,24 @@ class UserDashboardController extends Controller
             }
 
             // Load relationships
+            $messages = $user->messages()->latest()->get();
+
+            // Count unread admin replies
+            $unreadReplies = $user->messages()
+                ->whereNotNull('admin_reply')
+                ->where('reply_read', false)
+                ->count();
+
             $dashboardData = [
                 'user' => $user,
                 'appointments' => $user->appointments()->latest()->get(),
-                'messages' => $user->messages()->latest()->get(),
+                'messages' => $messages,
                 'selections' => $user->selections()->get(),
                 'stats' => [
                     'total_appointments' => $user->appointments()->count(),
                     'total_messages' => $user->messages()->count(),
                     'total_selections' => $user->selections()->count(),
+                    'unread_replies' => $unreadReplies,
                 ]
             ];
 
@@ -84,5 +93,18 @@ class UserDashboardController extends Controller
     public function messages(Request $request)
     {
         return response()->json($request->user()->messages()->latest()->get());
+    }
+
+    /**
+     * Mark an admin reply as read by the user
+     */
+    public function markReplyRead(Request $request, $id)
+    {
+        $user = $request->user();
+        $message = $user->messages()->findOrFail($id);
+
+        $message->update(['reply_read' => true]);
+
+        return response()->json(['message' => 'Réponse marquée comme lue', 'data' => $message]);
     }
 }

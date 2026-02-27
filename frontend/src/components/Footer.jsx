@@ -20,7 +20,6 @@ const Footer = () => {
 
             <div className="container footer-content">
                 <div className="footer-grid">
-                    {/* Brand Column */}
                     <div className="footer-brand">
                         <div className="footer-logo">
                             <img src="/logo.png" alt="Cabinet Hannit" style={{ width: '40px', height: '40px', marginRight: '10px' }} />

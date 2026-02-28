@@ -7,6 +7,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\Api\AuthController;
 
 
@@ -48,6 +49,14 @@ Route::group(['middleware' => ['auth:sanctum', 'admin']], function () {
 
     // Patients (from appointments)
     Route::get('/admin/patients', [AdminController::class, 'patients']);
+
+    // ── Daily PDF Reports ──────────────────────────────────────────
+    Route::get('/admin/reports/today', [DailyReportController::class, 'preview']);
+    Route::post('/admin/reports/generate', [DailyReportController::class, 'generate']);
+    Route::get('/admin/reports/download', [DailyReportController::class, 'download']);
+    Route::get('/admin/reports/stream', [DailyReportController::class, 'stream']);
+    Route::get('/admin/reports/history', [DailyReportController::class, 'history']);
+    Route::delete('/admin/reports/{date}', [DailyReportController::class, 'destroy']);
 });
 
 // General Protected routes for both users and admins

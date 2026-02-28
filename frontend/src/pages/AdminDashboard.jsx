@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDashboardStats, getAppointments, updateAppointmentStatus, getMessages, updateMessageStatus, getPatients, getUsers, adminLogout, replyToMessage } from '../services/api';
+import { getDashboardStats, getAppointments, updateAppointmentStatus, getMessages, updateMessageStatus, getPatients, getUsers, adminLogout, replyToMessage, generateReport, downloadReport, getReportHistory, deleteReport } from '../services/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -16,6 +16,11 @@ const AdminDashboard = () => {
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+
+    // Reports state
+    const [reportHistory, setReportHistory] = useState([]);
+    const [reportLoading, setReportLoading] = useState(false);
+    const [reportMessage, setReportMessage] = useState(null);
 
     useEffect(() => {
         const token = localStorage.getItem('admin_token');
@@ -105,6 +110,68 @@ const AdminDashboard = () => {
         filter === 'all' ? true : app.status === filter
     );
 
+    // ── Report Functions ────────────────────────────────────────
+    const fetchReportHistory = async () => {
+        try {
+            const res = await getReportHistory();
+            setReportHistory(res.data.reports || []);
+        } catch (error) {
+            console.error('Error fetching report history:', error);
+        }
+    };
+
+    const handleGenerateReport = async () => {
+        setReportLoading(true);
+        setReportMessage(null);
+        try {
+            const res = await generateReport();
+            setReportMessage({ type: 'success', text: `Rapport du ${res.data.date} généré avec succès !` });
+            fetchReportHistory();
+        } catch (error) {
+            setReportMessage({ type: 'error', text: 'Erreur lors de la génération du rapport.' });
+        } finally {
+            setReportLoading(false);
+        }
+    };
+
+    const handleDownloadReport = async (date = null) => {
+        setReportLoading(true);
+        try {
+            const res = await downloadReport(date);
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `report-${date || new Date().toISOString().slice(0, 10)}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            setReportMessage({ type: 'error', text: 'Erreur lors du téléchargement du rapport.' });
+        } finally {
+            setReportLoading(false);
+        }
+    };
+
+    const handleDeleteReport = async (date) => {
+        if (!window.confirm(`Supprimer le rapport du ${date} ?`)) return;
+        try {
+            await deleteReport(date);
+            setReportHistory(prev => prev.filter(r => r.date !== date));
+            setReportMessage({ type: 'success', text: 'Rapport supprimé.' });
+        } catch (error) {
+            setReportMessage({ type: 'error', text: 'Erreur lors de la suppression.' });
+        }
+    };
+
+    // Load report history when switching to reports tab
+    useEffect(() => {
+        if (activeTab === 'reports') {
+            fetchReportHistory();
+        }
+    }, [activeTab]);
+
     return (
         <div className="admin-dashboard">
             <div className="admin-sidebar">
@@ -141,6 +208,13 @@ const AdminDashboard = () => {
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><polyline points="17 11 19 13 23 9" /></svg>
                         Utilisateurs
+                    </button>
+                    <button
+                        className={`nav-item ${activeTab === 'reports' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('reports')}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                        Rapports PDF
                     </button>
                 </nav>
                 <div className="sidebar-footer">
@@ -444,10 +518,109 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
+                {/* Reports Tab */}
+                {activeTab === 'reports' && (
+                    <div className="dashboard-card animate-fadeInUp">
+                        <div className="card-header">
+                            <h2>Rapports PDF Quotidiens</h2>
+                            <div className="report-actions-header">
+                                <button
+                                    className="btn btn-primary report-generate-btn"
+                                    onClick={handleGenerateReport}
+                                    disabled={reportLoading}
+                                >
+                                    {reportLoading ? (
+                                        <span className="btn-spinner"></span>
+                                    ) : (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                                    )}
+                                    Générer le rapport du jour
+                                </button>
+                                <button
+                                    className="btn btn-download"
+                                    onClick={() => handleDownloadReport()}
+                                    disabled={reportLoading}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                    Télécharger PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        {reportMessage && (
+                            <div className={`report-alert ${reportMessage.type}`}>
+                                {reportMessage.type === 'success' ? (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                                ) : (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                )}
+                                {reportMessage.text}
+                            </div>
+                        )}
+
+                        <div className="report-today-card">
+                            <div className="report-today-icon">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                            </div>
+                            <div className="report-today-info">
+                                <h3>Rapport d'aujourd'hui</h3>
+                                <p>{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <span>Inclut tous les rendez-vous, messages et inscriptions du jour</span>
+                            </div>
+                        </div>
+
+                        <div className="report-history-section">
+                            <h3 className="report-history-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                Historique des rapports
+                            </h3>
+                            {reportHistory.length === 0 ? (
+                                <div className="report-empty">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></svg>
+                                    <p>Aucun rapport généré pour le moment</p>
+                                    <span>Cliquez sur "Générer le rapport du jour" pour commencer</span>
+                                </div>
+                            ) : (
+                                <div className="report-history-list">
+                                    {reportHistory.map((report) => (
+                                        <div key={report.date} className="report-history-item">
+                                            <div className="report-item-icon">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                                            </div>
+                                            <div className="report-item-info">
+                                                <h4>{report.date_formatted}</h4>
+                                                <span className="report-item-meta">
+                                                    {report.filename} — {(report.size / 1024).toFixed(1)} Ko
+                                                </span>
+                                            </div>
+                                            <div className="report-item-actions">
+                                                <button
+                                                    className="action-btn report-dl-btn"
+                                                    onClick={() => handleDownloadReport(report.date)}
+                                                    title="Télécharger"
+                                                >
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                                </button>
+                                                <button
+                                                    className="action-btn cross"
+                                                    onClick={() => handleDeleteReport(report.date)}
+                                                    title="Supprimer"
+                                                >
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
 
             </main>
 
-          
+
             {isReplyModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content animate-scaleIn">

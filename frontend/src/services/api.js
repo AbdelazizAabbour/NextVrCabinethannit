@@ -54,6 +54,20 @@ export const deleteMessage = (id) => api.delete(`/admin/messages/${id}`);
 export const getPatients = () => api.get('/admin/patients');
 export const getUsers = () => api.get('/admin/users');
 
+// Daily PDF Reports
+export const getReportPreview = () => api.get('/admin/reports/today');
+export const generateReport = (date = null) => api.post('/admin/reports/generate', date ? { date } : {});
+export const downloadReport = (date = null) => {
+    const params = date ? `?date=${date}` : '';
+    return api.get(`/admin/reports/download${params}`, { responseType: 'blob' });
+};
+export const streamReport = (date = null) => {
+    const params = date ? `?date=${date}` : '';
+    return api.get(`/admin/reports/stream${params}`, { responseType: 'blob' });
+};
+export const getReportHistory = () => api.get('/admin/reports/history');
+export const deleteReport = (date) => api.delete(`/admin/reports/${date}`);
+
 export default api;
 
 // User Dashboard

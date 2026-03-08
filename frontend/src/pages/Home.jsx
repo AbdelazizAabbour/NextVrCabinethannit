@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import ThreeDModel from '../components/ThreeDModel';
 import ScrollReveal from '../components/ScrollReveal';
+import TiltCard from '../components/TiltCard';
 import './Home.css';
 
 /* ── Inline SVG Icons ── */
@@ -93,6 +93,13 @@ const faqs = [
 ];
 
 const Home = () => {
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const [openFaq, setOpenFaq] = useState(null);
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -197,38 +204,30 @@ const Home = () => {
                         transition={{ duration: 1 }}
                         className="hero-visual"
                     >
-                        <div className="hero-visual-container" style={{ position: 'relative', width: '100%', height: '600px' }}>
-                            {/* 3D Background Model */}
-                            <div className="hero-3d-bg" style={{ position: 'absolute', inset: 0, zIndex: 0, opacity: 0.6 }}>
-                                <ThreeDModel />
-                            </div>
-
+                        <div className="hero-visual-container">
                             {/* Hero Image with 3D Tilt */}
-                            <motion.div
-                                whileHover={{ rotateY: 15, rotateX: -5, scale: 1.02 }}
-                                style={{ perspective: '1000px', zIndex: 1, position: 'relative' }}
-                                className="hero-image-wrapper"
-                            >
+                            <TiltCard className="hero-image-wrapper">
                                 <img
                                     src={heroImage}
                                     alt="Cabinet de kinésithérapie moderne"
                                     className="hero-image"
+                                    style={{ transform: 'translateZ(20px)' }}
                                 />
-                                <div className="hero-floating-card hero-card-1">
+                                <div className="hero-floating-card hero-card-1" style={{ transform: 'translateZ(120px)' }}>
                                     <div className="floating-card-icon">{icons.check}</div>
                                     <div>
                                         <strong>+2000</strong>
                                         <span>Patients satisfaits</span>
                                     </div>
                                 </div>
-                                <div className="hero-floating-card hero-card-2">
+                                <div className="hero-floating-card hero-card-2" style={{ transform: 'translateZ(150px)' }}>
                                     <div className="floating-card-icon accent">{icons.clock}</div>
                                     <div>
                                         <strong>Depuis 2017</strong>
                                         <span>À votre service</span>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </TiltCard>
                         </div>
                     </motion.div>
                 </div>
@@ -237,18 +236,13 @@ const Home = () => {
                 <div className="container">
                     <div className="hero-specialties">
                         {specialties.map((spec, i) => (
-                            <motion.div
-                                key={i}
-                                whileHover={{ scale: 1.05, rotateY: 10, rotateX: 5 }}
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 * i }}
-                                className="specialty-card"
-                            >
-                                <div className="specialty-icon">{spec.icon}</div>
-                                <h3 className="specialty-title">{spec.title}</h3>
-                                <p className="specialty-desc">{spec.desc}</p>
-                            </motion.div>
+                            <ScrollReveal key={i} delay={0.2 * i}>
+                                <TiltCard className="specialty-card">
+                                    <div className="specialty-icon" style={{ transform: 'translateZ(40px)' }}>{spec.icon}</div>
+                                    <h3 className="specialty-title" style={{ transform: 'translateZ(30px)' }}>{spec.title}</h3>
+                                    <p className="specialty-desc" style={{ transform: 'translateZ(20px)' }}>{spec.desc}</p>
+                                </TiltCard>
+                            </ScrollReveal>
                         ))}
                     </div>
                 </div>
@@ -259,24 +253,20 @@ const Home = () => {
                 <div className="container">
                     <div className="about-grid">
                         <ScrollReveal direction="left" className="about-images">
-                            <motion.div
-                                whileHover={{ rotateY: -10, rotateX: 5, scale: 1.02 }}
-                                className="about-img-main"
-                            >
+                            <TiltCard className="about-img-main">
                                 <img
                                     src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&h=600&fit=crop"
                                     alt="Cabinet Hannit intérieur"
+                                    style={{ transform: 'translateZ(20px)' }}
                                 />
-                            </motion.div>
-                            <motion.div
-                                whileHover={{ rotateY: 10, rotateX: -5, scale: 1.05 }}
-                                className="about-img-secondary"
-                            >
+                            </TiltCard>
+                            <TiltCard className="about-img-secondary">
                                 <img
                                     src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=300&h=350&fit=crop"
                                     alt="Soins de kinésithérapie"
+                                    style={{ transform: 'translateZ(30px)' }}
                                 />
-                            </motion.div>
+                            </TiltCard>
                             <div className="about-experience-badge">
                                 <span className="experience-number">8+</span>
                                 <span className="experience-text">Années d'expérience</span>
@@ -355,19 +345,19 @@ const Home = () => {
                             <ScrollReveal
                                 key={i}
                                 delay={i * 0.1}
-                                className="service-card card visible"
+                                className="visible"
                             >
-                                <motion.div whileHover={{ scale: 1.05, rotateY: 5, translateZ: 20 }}>
-                                    <div className="service-card-icon">{service.icon}</div>
-                                    <h3 className="service-card-title">{service.title}</h3>
-                                    <p className="service-card-desc">{service.desc}</p>
-                                    <Link to="/services" className="service-card-link">
+                                <TiltCard className="service-card card">
+                                    <div className="service-card-icon" style={{ transform: 'translateZ(50px)' }}>{service.icon}</div>
+                                    <h3 className="service-card-title" style={{ transform: 'translateZ(40px)' }}>{service.title}</h3>
+                                    <p className="service-card-desc" style={{ transform: 'translateZ(30px)' }}>{service.desc}</p>
+                                    <Link to="/services" className="service-card-link" style={{ transform: 'translateZ(20px)' }}>
                                         En savoir plus
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
                                         </svg>
                                     </Link>
-                                </motion.div>
+                                </TiltCard>
                             </ScrollReveal>
                         ))}
                     </div>

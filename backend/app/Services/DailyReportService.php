@@ -27,7 +27,7 @@ class DailyReportService
         $date = $date ?? Carbon::today();
         $dateString = $date->toDateString(); // YYYY-MM-DD
 
-        // ── Appointments created or updated today ──────────────────────
+
         $appointments = Appointment::with('user')
             ->where(function ($query) use ($dateString) {
                 $query->whereDate('created_at', $dateString)
@@ -36,7 +36,6 @@ class DailyReportService
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // ── Contact messages created or updated today ──────────────────
         $messages = ContactMessage::with('user')
             ->where(function ($query) use ($dateString) {
                 $query->whereDate('created_at', $dateString)
@@ -45,12 +44,11 @@ class DailyReportService
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // ── New users registered today ─────────────────────────────────
         $newUsers = User::whereDate('created_at', $dateString)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // ── Summary statistics ─────────────────────────────────────────
+
         $summary = [
             'total_appointments' => $appointments->count(),
             'pending_appointments' => $appointments->where('status', 'pending')->count(),
@@ -65,7 +63,7 @@ class DailyReportService
 
         return [
             'date' => $date,
-            'date_formatted' => $date->format('l, F j, Y'),
+            'date_formatted' => $date->translatedFormat('l j F Y'),
             'summary' => $summary,
             'appointments' => $appointments,
             'messages' => $messages,
@@ -104,7 +102,7 @@ class DailyReportService
         $filename = $this->buildFilename($date);
         $path = $this->storageDir . '/' . $filename;
 
-        // Store the PDF (overwrites if re-generated for the same day)
+   
         Storage::disk('local')->put($path, $pdf->output());
 
         return $path;
@@ -142,7 +140,7 @@ class DailyReportService
                 $date = Carbon::parse($matches[1]);
                 $reports[] = [
                     'date' => $date->toDateString(),
-                    'date_formatted' => $date->format('l, F j, Y'),
+                    'date_formatted' => $date->translatedFormat('l j F Y'),
                     'filename' => $basename,
                     'path' => $file,
                     'size' => Storage::disk('local')->size($file),

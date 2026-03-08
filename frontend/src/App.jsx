@@ -50,7 +50,7 @@ function App() {
                     <Navbar />
                     <main>
                         <Suspense fallback={<PageLoader />}>
-                        {/* les routers deyal apk  kamela  */}
+                            {/* les routers deyal apk  kamela  */}
                             <Routes>
                                 <Route path="/" element={<Home />} />
                                 <Route path="/a-propos" element={<About />} />

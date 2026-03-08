@@ -127,36 +127,61 @@ const Navbar = () => {
 
             {/* Mobile Menu */}
             <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-                <ul className="mobile-links">
-                    {navLinks.map((link, i) => (
-                        <li key={link.path} style={{ animationDelay: `${i * 0.05}s` }}>
-                            <Link
-                                to={link.path}
-                                className={`mobile-link ${location.pathname === link.path ? 'active' : ''}`}
-                            >
-                                {link.label}
-                            </Link>
-                        </li>
-                    ))}
-                    {user ? (
-                        <li style={{ animationDelay: '0.25s' }}>
-                            <button onClick={handleLogout} className="btn btn-secondary mobile-cta" style={{ marginBottom: '10px', width: '100%' }}>
+                <div className="mobile-menu-header">
+                    <div className="navbar-logo">
+                        <div className="logo-icon">
+                            <img src="/logo.png" alt="Cabinet Hannit Logo" style={{ width: '30px', height: '30px' }} />
+                        </div>
+                        <div className="logo-text">
+                            <span className="logo-name">Cabinet Hannit</span>
+                            <span className="logo-tagline">Kinésithérapie</span>
+                        </div>
+                    </div>
+                    <button className="mobile-close" onClick={() => setMenuOpen(false)}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className="mobile-menu-content">
+                    <ul className="mobile-links">
+                        {navLinks.map((link, i) => (
+                            <li key={link.path}>
+                                <Link
+                                    to={link.path}
+                                    className={`mobile-link ${location.pathname === link.path ? 'active' : ''}`}
+                                    onClick={() => setMenuOpen(false)}
+                                >
+                                    {link.label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div className="mobile-actions">
+                        {user ? (
+                            <button onClick={handleLogout} className="btn btn-secondary mobile-cta">
                                 Déconnexion
                             </button>
-                        </li>
-                    ) : (
-                        <li style={{ animationDelay: '0.25s' }}>
-                            <Link to="/connexion" className="btn btn-secondary mobile-cta" style={{ marginBottom: '10px' }}>
+                        ) : (
+                            <Link to="/connexion" className="btn btn-secondary mobile-cta">
                                 Connexion
                             </Link>
-                        </li>
-                    )}
-                    <li style={{ animationDelay: '0.3s' }}>
+                        )}
                         <Link to="/rendez-vous" className="btn btn-primary mobile-cta">
                             Prendre Rendez-vous
                         </Link>
-                    </li>
-                </ul>
+                    </div>
+
+                    <div className="mobile-footer">
+                        <p className="mobile-footer-title">Contactez-nous</p>
+                        <a href="tel:+212644574537" className="mobile-footer-link">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            +212 644 574 537
+                        </a>
+                    </div>
+                </div>
             </div>
 
             {/* Mobile Overlay */}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardStats, getAppointments, updateAppointmentStatus, getMessages, updateMessageStatus, getPatients, getUsers, adminLogout, replyToMessage, generateReport, downloadReport, getReportHistory, deleteReport } from '../services/api';
+import Analytics from './Analytics';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('appointments'); // appointments, patients, messages, users
+    const [activeTab, setActiveTab] = useState('analytics'); // appointments, patients, messages, users
     const [stats, setStats] = useState({ total_rdv: 0, pending_rdv: 0, today_rdv: 0, unread_messages: 0 });
     const [appointments, setAppointments] = useState([]);
     const [patients, setPatients] = useState([]);
@@ -210,6 +211,13 @@ const AdminDashboard = () => {
                         Utilisateurs
                     </button>
                     <button
+                        className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('analytics')}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6" /></svg>
+                        Analytiques
+                    </button>
+                    <button
                         className={`nav-item ${activeTab === 'reports' ? 'active' : ''}`}
                         onClick={() => setActiveTab('reports')}
                     >
@@ -234,48 +242,6 @@ const AdminDashboard = () => {
                     </div>
                 </header>
 
-                {/* Stats Cards */}
-                <div className="stats-cards">
-                    <div className="stat-card">
-                        <div className={`stat-icon primary ${loading ? 'skeleton skeleton-circle' : ''}`}>
-                            {!loading && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>}
-                        </div>
-                        <div className="stat-info">
-                            {loading ? (
-                                <div className="skeleton skeleton-text"></div>
-                            ) : (
-                                <h3>{stats.total_rdv}</h3>
-                            )}
-                            <p>Total Rendez-vous</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className={`stat-icon warning ${loading ? 'skeleton skeleton-circle' : ''}`}>
-                            {!loading && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>}
-                        </div>
-                        <div className="stat-info">
-                            {loading ? (
-                                <div className="skeleton skeleton-text"></div>
-                            ) : (
-                                <h3>{stats.pending_rdv}</h3>
-                            )}
-                            <p>En Attente</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className={`stat-icon success ${loading ? 'skeleton skeleton-circle' : ''}`}>
-                            {!loading && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>}
-                        </div>
-                        <div className="stat-info">
-                            {loading ? (
-                                <div className="skeleton skeleton-text"></div>
-                            ) : (
-                                <h3>{stats.today_rdv}</h3>
-                            )}
-                            <p>Aujourd'hui</p>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Content Tabs */}
 
@@ -615,6 +581,16 @@ const AdminDashboard = () => {
                             )}
                         </div>
                     </div>
+                )}
+
+                {/* Analytics Tab */}
+                {activeTab === 'analytics' && (
+                    <Analytics
+                        appointments={appointments}
+                        stats={stats}
+                        messages={messages}
+                        users={users}
+                    />
                 )}
 
 

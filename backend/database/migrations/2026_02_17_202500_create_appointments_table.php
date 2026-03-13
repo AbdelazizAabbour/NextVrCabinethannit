@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->date('date');
             $table->time('time')->nullable();
             $table->text('message')->nullable();
-            $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
+            $table->string('status')->default('pending');
             $table->timestamps();
         });
     }
